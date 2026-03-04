@@ -1,38 +1,105 @@
 .container {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .label {
-  width: 50px;
-  font-size: 14px;
-  color: #666;
+  width: 60px;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  color: #8fbc8f;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
+/* 有机曲线边框的生命条 */
 .barBg {
   flex: 1;
-  height: 16px;
-  background: #e0e0e0;
-  border-radius: 8px;
+  height: 20px;
+  background: linear-gradient(180deg, #1a1510 0%, #0d0a08 100%);
+  border-radius: 10px;
   overflow: hidden;
+  position: relative;
+  border: 2px solid #3d2817;
+  box-shadow: 
+    inset 0 2px 4px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.05);
 }
 
+/* 生命条内部纹理 */
+.barBg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 8px,
+    rgba(0,0,0,0.1) 8px,
+    rgba(0,0,0,0.1) 10px
+  );
+  pointer-events: none;
+}
+
+/* 流动的生命精华 */
 .barFill {
   height: 100%;
   border-radius: 8px;
-  transition: width 0.3s ease;
+  transition: width 0.5s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.red { background: linear-gradient(90deg, #ff6b6b, #ee5a5a); }
-.yellow { background: linear-gradient(90deg, #ffd93d, #f9c846); }
-.blue { background: linear-gradient(90deg, #4dabf7, #339af0); }
+/* 脉动光泽 */
+.barFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.2),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+/* 不同属性的颜色 - 腐败风格 */
+.red { 
+  background: linear-gradient(180deg, #8b0000 0%, #4a0000 50%, #2d0000 100%);
+  box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+}
+
+.yellow { 
+  background: linear-gradient(180deg, #9acd32 0%, #6b8e23 50%, #4a6316 100%);
+  box-shadow: 0 0 10px rgba(154, 205, 50, 0.4);
+}
+
+.blue { 
+  background: linear-gradient(180deg, #483d8b 0%, #2d2463 50%, #1a1445 100%);
+  box-shadow: 0 0 10px rgba(72, 61, 139, 0.5);
+}
 
 .value {
-  width: 30px;
+  width: 35px;
   text-align: right;
+  font-family: 'Cinzel', serif;
   font-size: 14px;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: #9acd32;
+  text-shadow: 0 0 5px rgba(154, 205, 50, 0.3);
 }
