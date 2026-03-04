@@ -8,10 +8,18 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
-  "keywords": ["ai", "pet", "virtual-pet", "react", "canvas"],
+  "keywords": [
+    "ai",
+    "pet",
+    "virtual-pet",
+    "react",
+    "canvas"
+  ],
   "author": "小满团队",
   "license": "MIT",
   "dependencies": {
+    "canvas": "^3.2.1",
+    "dragonbones-runtime": "github:DragonBones/DragonBonesJS",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
