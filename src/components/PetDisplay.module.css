@@ -6,57 +6,67 @@
   position: relative;
 }
 
-/* 神秘法阵背景 */
+/* 神秘法阵背景 - 使用阿画素材 */
 .petWrapper {
   position: relative;
-  width: 280px;
-  height: 280px;
+  width: 300px;
+  height: 300px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: url('/assets/ui/magic_circle.png') center/contain no-repeat;
 }
 
-/* 旋转的法阵 */
+/* 触手边框装饰 - 使用阿画素材 */
 .petWrapper::before {
   content: '';
   position: absolute;
-  width: 260px;
-  height: 260px;
-  background: 
-    radial-gradient(circle, transparent 30%, rgba(138, 43, 226, 0.1) 50%, transparent 70%),
-    repeating-conic-gradient(
-      from 0deg,
-      transparent 0deg,
-      rgba(139, 0, 139, 0.1) 10deg,
-      transparent 20deg
-    );
-  border-radius: 50%;
-  animation: rotate-slow 20s linear infinite;
-  border: 2px dashed rgba(139, 0, 139, 0.3);
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: url('/assets/ui/tentacle_border.png') center/contain no-repeat;
+  pointer-events: none;
+  opacity: 0.8;
+  animation: pulse-border 4s ease-in-out infinite;
 }
 
-/* 内圈法阵 */
+@keyframes pulse-border {
+  0%, 100% { 
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+/* 雾气效果层 - 使用阿画素材 */
 .petWrapper::after {
   content: '';
   position: absolute;
-  width: 200px;
-  height: 200px;
-  background: 
-    radial-gradient(circle, transparent 40%, rgba(154, 205, 50, 0.05) 60%, transparent 80%);
-  border-radius: 50%;
-  animation: rotate-reverse 15s linear infinite;
-  border: 1px solid rgba(154, 205, 50, 0.2);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/assets/ui/mist_overlay.png') center/cover no-repeat;
+  pointer-events: none;
+  opacity: 0.3;
+  animation: mist-flow 8s ease-in-out infinite;
+  mix-blend-mode: screen;
 }
 
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes rotate-reverse {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
+@keyframes mist-flow {
+  0%, 100% { 
+    opacity: 0.2;
+    transform: translateX(-5px);
+  }
+  50% { 
+    opacity: 0.4;
+    transform: translateX(5px);
+  }
 }
 
 /* 浮动动画 */
@@ -126,8 +136,8 @@
 /* 状态表情 - 悬浮在角落 */
 .stateImage {
   position: absolute;
-  bottom: 40px;
-  right: 40px;
+  bottom: 50px;
+  right: 50px;
   width: 64px;
   height: 64px;
   object-fit: contain;
@@ -168,8 +178,12 @@
 /* 状态徽章 - 羊皮纸风格 */
 .stateBadge {
   background: 
-    linear-gradient(135deg, rgba(45, 36, 22, 0.9) 0%, rgba(35, 28, 18, 0.9) 100%);
-  padding: 10px 20px;
+    linear-gradient(135deg, rgba(45, 36, 22, 0.9) 0%, rgba(35, 28, 18, 0.9) 100%),
+    url('/assets/ui/bg_parchment.png');
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: multiply;
+  padding: 10px 24px;
   border-radius: 4px;
   font-family: 'Cinzel', serif;
   font-size: 13px;
@@ -197,5 +211,5 @@
   opacity: 0.6;
 }
 
-.stateBadge::before { left: 6px; }
-.stateBadge::after { right: 6px; }
+.stateBadge::before { left: 8px; }
+.stateBadge::after { right: 8px; }
