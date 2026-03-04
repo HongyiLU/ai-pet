@@ -1,0 +1,76 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.petWrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.petWrapper:hover {
+  transform: scale(1.05);
+}
+
+.bounce {
+  animation: float 1.5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.petAnimation {
+  animation: petting 0.3s ease;
+}
+
+@keyframes petting {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95) rotate(-5deg); }
+  100% { transform: scale(1); }
+}
+
+.mainImage {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
+}
+
+.stateImage {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.hint {
+  color: white;
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.stateBadge {
+  background: rgba(255,255,255,0.9);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}

@@ -1,0 +1,38 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.label {
+  width: 50px;
+  font-size: 14px;
+  color: #666;
+}
+
+.barBg {
+  flex: 1;
+  height: 16px;
+  background: #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+.red { background: linear-gradient(90deg, #ff6b6b, #ee5a5a); }
+.yellow { background: linear-gradient(90deg, #ffd93d, #f9c846); }
+.blue { background: linear-gradient(90deg, #4dabf7, #339af0); }
+
+.value {
+  width: 30px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
