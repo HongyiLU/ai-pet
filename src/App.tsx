@@ -1,5 +1,5 @@
 import { usePetState } from './hooks/usePetState'
-import { PetDisplay } from './components/PetDisplay'
+import { CanvasPet } from './canvas-pet/CanvasPet'
 import { StatBar } from './components/StatBar'
 import './App.css'
 
@@ -14,7 +14,7 @@ function App() {
       </header>
       
       <main className="app-main">
-        <PetDisplay 
+        <CanvasPet 
           state={state} 
           onClick={state === 'sleep' ? wakeUp : pet}
         />
