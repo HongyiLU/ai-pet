@@ -55,14 +55,112 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
     };
   }, []);
 
-  // 绘制函数
+  // 绘制魔法阵（底层）
+  const drawMagicCircle = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, time: number) => {
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    
+    // 外圈旋转
+    ctx.save();
+    ctx.rotate(time * 0.02);
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = '#8b00ff';
+    ctx.lineWidth = 2;
+    
+    // 外圈符文环
+    ctx.beginPath();
+    ctx.arc(0, 0, 180, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // 外圈符文
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const x = Math.cos(angle) * 180;
+      const y = Math.sin(angle) * 180;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle + Math.PI / 2);
+      ctx.fillStyle = `rgba(139, 0, 255, ${0.4 + Math.sin(time * 2 + i) * 0.2})`;
+      ctx.font = '16px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('◈', 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+    
+    // 中圈反向旋转
+    ctx.save();
+    ctx.rotate(-time * 0.015);
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = '#9400d3';
+    ctx.lineWidth = 1.5;
+    
+    // 六芒星
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const x = Math.cos(angle) * 120;
+      const y = Math.sin(angle) * 120;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    
+    // 内圈
+    ctx.beginPath();
+    ctx.arc(0, 0, 80, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    
+    // 内圈脉动
+    const pulseScale = 1 + Math.sin(time * 3) * 0.05;
+    ctx.save();
+    ctx.scale(pulseScale, pulseScale);
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = '#ba55d3';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, 60, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    
+    ctx.restore();
+  };
+
+  // 绘制雾气效果
+  const drawMist = (ctx: CanvasRenderingContext2D, width: number, height: number, time: number) => {
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    
+    // 多层雾气
+    for (let i = 0; i < 3; i++) {
+      const x = Math.sin(time * 0.5 + i) * 50;
+      const y = Math.cos(time * 0.3 + i) * 30;
+      
+      const gradient = ctx.createRadialGradient(
+        width / 2 + x, height / 2 + y, 0,
+        width / 2 + x, height / 2 + y, 200
+      );
+      gradient.addColorStop(0, 'rgba(138, 43, 226, 0.3)');
+      gradient.addColorStop(0.5, 'rgba(75, 0, 130, 0.1)');
+      gradient.addColorStop(1, 'transparent');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+    
+    ctx.restore();
+  };
+
+  // 主绘制函数
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
     const images = imagesRef.current;
-    if (images.size < 9) return; // 等待所有图片加载
+    if (images.size < 9) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -71,7 +169,13 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
     const frame = frameRef.current++;
     const time = frame * 0.05;
 
-    // 根据状态计算变换
+    // ========== 第1层：魔法阵（最底层）==========
+    drawMagicCircle(ctx, centerX, centerY, time);
+    
+    // ========== 第2层：雾气 ==========
+    drawMist(ctx, canvas.width, canvas.height, time);
+
+    // 根据状态计算宠物变换
     let bodyY = centerY;
     let bodyScale = 1;
     let bodyRotation = 0;
@@ -80,29 +184,29 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
 
     switch (state) {
       case 'idle':
-        bodyY += Math.sin(time) * 5; // 呼吸起伏
+        bodyY += Math.sin(time) * 5;
         break;
       case 'happy':
-        bodyY += Math.abs(Math.sin(time * 2)) * -20; // 跳跃
+        bodyY += Math.abs(Math.sin(time * 2)) * -20;
         bodyScale = 1 + Math.sin(time * 2) * 0.1;
         break;
       case 'eat':
         showOpenMouth = true;
-        bodyScale = 1 + Math.sin(time * 4) * 0.05; // 咀嚼
+        bodyScale = 1 + Math.sin(time * 4) * 0.05;
         break;
       case 'sleep':
-        bodyRotation = Math.sin(time * 0.5) * 0.1; // 轻微摇晃
-        glowAlpha = 0.5 + Math.sin(time) * 0.2; // 发光变暗
+        bodyRotation = Math.sin(time * 0.5) * 0.1;
+        glowAlpha = 0.5 + Math.sin(time) * 0.2;
         break;
     }
 
-    // 保存上下文
+    // ========== 第3层：宠物（最上层）==========
     ctx.save();
     ctx.translate(centerX, bodyY);
     ctx.rotate(bodyRotation);
     ctx.scale(bodyScale, bodyScale);
 
-    // 绘制发光效果（最底层）
+    // 发光效果
     const glow = images.get('glow');
     if (glow && state === 'sleep') {
       ctx.globalAlpha = glowAlpha;
@@ -110,7 +214,7 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
       ctx.globalAlpha = 1;
     }
 
-    // 绘制触手（在主体下方）
+    // 触手
     const tentacles = [
       { img: images.get('tentacle1'), offsetX: -60, offsetY: 40, phase: 0 },
       { img: images.get('tentacle2'), offsetX: 60, offsetY: 40, phase: Math.PI / 2 },
@@ -123,12 +227,11 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
       ctx.save();
       ctx.translate(offsetX, offsetY);
       
-      // 触手摆动动画
       let rotation = Math.sin(time + phase) * 0.15;
       if (state === 'happy') {
-        rotation = Math.sin(time * 3 + phase) * 0.4; // 欢舞
+        rotation = Math.sin(time * 3 + phase) * 0.4;
       } else if (state === 'sleep') {
-        rotation = Math.sin(time * 0.5 + phase) * 0.05; // 缓慢摆动
+        rotation = Math.sin(time * 0.5 + phase) * 0.05;
       }
       
       ctx.rotate(rotation);
@@ -136,19 +239,15 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
       ctx.restore();
     });
 
-    // 绘制主体
+    // 主体
     const body = images.get('body');
     if (body) {
       ctx.drawImage(body, -body.width / 2, -body.height / 2);
     }
 
-    // 绘制眼睛（跟随鼠标）
+    // 眼睛（跟随鼠标）
     const eye = images.get('eye');
     if (eye && state !== 'sleep') {
-      const eyeOffsetX = 0;
-      const eyeOffsetY = -10;
-      
-      // 计算眼睛看向鼠标的角度
       const dx = mouseRef.current.x - centerX;
       const dy = mouseRef.current.y - bodyY;
       const angle = Math.atan2(dy, dx);
@@ -157,10 +256,10 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
       const pupilX = Math.cos(angle) * distance;
       const pupilY = Math.sin(angle) * distance;
       
-      ctx.drawImage(eye, eyeOffsetX - eye.width / 2 + pupilX, eyeOffsetY - eye.height / 2 + pupilY);
+      ctx.drawImage(eye, -eye.width / 2 + pupilX, -10 - eye.height / 2 + pupilY);
     }
 
-    // 绘制嘴巴
+    // 嘴巴
     const mouth = showOpenMouth ? images.get('mouthOpen') : images.get('mouthClosed');
     if (mouth) {
       ctx.drawImage(mouth, -mouth.width / 2, 20);
