@@ -8,7 +8,6 @@ interface CanvasPetProps {
   onClick: () => void;
 }
 
-// 图片资源路径
 const ASSETS = {
   body: '/assets/spine/pet_body.png',
   tentacle1: '/assets/spine/pet_tentacle_01.png',
@@ -21,23 +20,95 @@ const ASSETS = {
   glow: '/assets/spine/pet_glow.png'
 };
 
+// 星星类型
+interface Star {
+  x: number;
+  y: number;
+  size: number;
+  alpha: number;
+  twinkleSpeed: number;
+  baseAlpha: number;
+}
+
+// 流星类型
+interface Meteor {
+  x: number;
+  y: number;
+  length: number;
+  speed: number;
+  angle: number;
+  alpha: number;
+  active: boolean;
+}
+
+// 迷雾类型
+interface Mist {
+  x: number;
+  y: number;
+  radius: number;
+  alpha: number;
+  speedX: number;
+  speedY: number;
+}
+
 export function CanvasPet({ state, onClick }: CanvasPetProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const mouseRef = useRef({ x: 0, y: 0 });
   const frameRef = useRef(0);
   const animationRef = useRef<number>();
+  
+  // 背景元素
+  const starsRef = useRef<Star[]>([]);
+  const meteorsRef = useRef<Meteor[]>([]);
+  const mistRef = useRef<Mist[]>([]);
+  const initializedRef = useRef(false);
+
+  // 初始化背景元素
+  const initBackground = useCallback((width: number, height: number) => {
+    if (initializedRef.current) return;
+    
+    // 生成星星
+    starsRef.current = Array.from({ length: 100 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 2 + 0.5,
+      baseAlpha: Math.random() * 0.5 + 0.3,
+      alpha: Math.random(),
+      twinkleSpeed: Math.random() * 0.05 + 0.02
+    }));
+    
+    // 初始化流星池
+    meteorsRef.current = Array.from({ length: 3 }, () => ({
+      x: -100,
+      y: -100,
+      length: Math.random() * 80 + 40,
+      speed: Math.random() * 8 + 4,
+      angle: Math.PI / 4,
+      alpha: 0,
+      active: false
+    }));
+    
+    // 生成迷雾
+    mistRef.current = Array.from({ length: 5 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      radius: Math.random() * 100 + 50,
+      alpha: Math.random() * 0.15 + 0.05,
+      speedX: (Math.random() - 0.5) * 0.3,
+      speedY: (Math.random() - 0.5) * 0.2
+    }));
+    
+    initializedRef.current = true;
+  }, []);
 
   // 加载图片
   useEffect(() => {
     const loadImages = async () => {
-      const entries = Object.entries(ASSETS);
-      for (const [key, src] of entries) {
+      for (const [key, src] of Object.entries(ASSETS)) {
         const img = new Image();
         img.src = src;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-        });
+        await new Promise((resolve) => { img.onload = resolve; });
         imagesRef.current.set(key, img);
       }
     };
@@ -55,102 +126,120 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
     };
   }, []);
 
-  // 绘制魔法阵（底层）
-  const drawMagicCircle = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, time: number) => {
-    ctx.save();
-    ctx.translate(centerX, centerY);
+  // 绘制深渊星空背景
+  const drawStarfield = (ctx: CanvasRenderingContext2D, width: number, height: number, time: number) => {
+    // 深紫/墨绿渐变底色
+    const gradient = ctx.createRadialGradient(
+      width / 2, height / 2, 0,
+      width / 2, height / 2, width
+    );
+    gradient.addColorStop(0, '#1a0f2e');
+    gradient.addColorStop(0.5, '#0d1f17');
+    gradient.addColorStop(1, '#0a0a12');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
     
-    // 外圈旋转
-    ctx.save();
-    ctx.rotate(time * 0.02);
-    ctx.globalAlpha = 0.35;
-    ctx.strokeStyle = '#8b00ff';
-    ctx.lineWidth = 2;
-    
-    // 外圈符文环
-    ctx.beginPath();
-    ctx.arc(0, 0, 180, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    // 外圈符文
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const x = Math.cos(angle) * 180;
-      const y = Math.sin(angle) * 180;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle + Math.PI / 2);
-      ctx.fillStyle = `rgba(139, 0, 255, ${0.4 + Math.sin(time * 2 + i) * 0.2})`;
-      ctx.font = '16px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('◈', 0, 0);
-      ctx.restore();
-    }
-    ctx.restore();
-    
-    // 中圈反向旋转
-    ctx.save();
-    ctx.rotate(-time * 0.015);
-    ctx.globalAlpha = 0.3;
-    ctx.strokeStyle = '#9400d3';
-    ctx.lineWidth = 1.5;
-    
-    // 六芒星
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * Math.PI * 2;
-      const x = Math.cos(angle) * 120;
-      const y = Math.sin(angle) * 120;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.stroke();
-    
-    // 内圈
-    ctx.beginPath();
-    ctx.arc(0, 0, 80, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-    
-    // 内圈脉动
-    const pulseScale = 1 + Math.sin(time * 3) * 0.05;
-    ctx.save();
-    ctx.scale(pulseScale, pulseScale);
-    ctx.globalAlpha = 0.25;
-    ctx.strokeStyle = '#ba55d3';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(0, 0, 60, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-    
-    ctx.restore();
+    // 绘制星星
+    starsRef.current.forEach(star => {
+      star.alpha = star.baseAlpha + Math.sin(time * star.twinkleSpeed) * 0.3;
+      ctx.globalAlpha = Math.max(0, Math.min(1, star.alpha));
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 星光十字效果
+      if (star.size > 1.5) {
+        ctx.strokeStyle = `rgba(255, 255, 255, ${ctx.globalAlpha * 0.5})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(star.x - star.size * 2, star.y);
+        ctx.lineTo(star.x + star.size * 2, star.y);
+        ctx.moveTo(star.x, star.y - star.size * 2);
+        ctx.lineTo(star.x, star.y + star.size * 2);
+        ctx.stroke();
+      }
+    });
+    ctx.globalAlpha = 1;
   };
 
-  // 绘制雾气效果
-  const drawMist = (ctx: CanvasRenderingContext2D, width: number, height: number, time: number) => {
-    ctx.save();
-    ctx.globalAlpha = 0.15;
+  // 绘制流星
+  const drawMeteors = (ctx: CanvasRenderingContext2D, width: number, height: number, _time: number) => {
+    // 随机触发流星
+    if (Math.random() < 0.005) {
+      const inactiveMeteor = meteorsRef.current.find(m => !m.active);
+      if (inactiveMeteor) {
+        inactiveMeteor.active = true;
+        inactiveMeteor.x = Math.random() * width * 0.5;
+        inactiveMeteor.y = -50;
+        inactiveMeteor.alpha = 1;
+      }
+    }
     
-    // 多层雾气
-    for (let i = 0; i < 3; i++) {
-      const x = Math.sin(time * 0.5 + i) * 50;
-      const y = Math.cos(time * 0.3 + i) * 30;
+    meteorsRef.current.forEach(meteor => {
+      if (!meteor.active) return;
       
+      // 更新位置
+      meteor.x += Math.cos(meteor.angle) * meteor.speed;
+      meteor.y += Math.sin(meteor.angle) * meteor.speed;
+      meteor.alpha -= 0.01;
+      
+      // 绘制流星尾迹
+      const tailX = meteor.x - Math.cos(meteor.angle) * meteor.length;
+      const tailY = meteor.y - Math.sin(meteor.angle) * meteor.length;
+      
+      const gradient = ctx.createLinearGradient(meteor.x, meteor.y, tailX, tailY);
+      gradient.addColorStop(0, `rgba(255, 255, 255, ${meteor.alpha})`);
+      gradient.addColorStop(0.5, `rgba(147, 112, 219, ${meteor.alpha * 0.5})`);
+      gradient.addColorStop(1, 'transparent');
+      
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(meteor.x, meteor.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+      
+      // 流星头部光点
+      ctx.fillStyle = `rgba(255, 255, 255, ${meteor.alpha})`;
+      ctx.beginPath();
+      ctx.arc(meteor.x, meteor.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 重置流星
+      if (meteor.alpha <= 0 || meteor.x > width + 100 || meteor.y > height + 100) {
+        meteor.active = false;
+      }
+    });
+  };
+
+  // 绘制迷雾
+  const drawMist = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    mistRef.current.forEach(mist => {
+      // 更新位置
+      mist.x += mist.speedX;
+      mist.y += mist.speedY;
+      
+      // 边界循环
+      if (mist.x < -mist.radius) mist.x = width + mist.radius;
+      if (mist.x > width + mist.radius) mist.x = -mist.radius;
+      if (mist.y < -mist.radius) mist.y = height + mist.radius;
+      if (mist.y > height + mist.radius) mist.y = -mist.radius;
+      
+      // 绘制迷雾团
       const gradient = ctx.createRadialGradient(
-        width / 2 + x, height / 2 + y, 0,
-        width / 2 + x, height / 2 + y, 200
+        mist.x, mist.y, 0,
+        mist.x, mist.y, mist.radius
       );
-      gradient.addColorStop(0, 'rgba(138, 43, 226, 0.3)');
-      gradient.addColorStop(0.5, 'rgba(75, 0, 130, 0.1)');
+      gradient.addColorStop(0, `rgba(138, 43, 226, ${mist.alpha})`);
+      gradient.addColorStop(0.5, `rgba(75, 0, 130, ${mist.alpha * 0.5})`);
       gradient.addColorStop(1, 'transparent');
       
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-    }
-    
-    ctx.restore();
+      ctx.beginPath();
+      ctx.arc(mist.x, mist.y, mist.radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
   };
 
   // 主绘制函数
@@ -159,23 +248,34 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
+    const width = canvas.width;
+    const height = canvas.height;
     const images = imagesRef.current;
-    if (images.size < 9) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+    // 初始化背景
+    initBackground(width, height);
+    
     const frame = frameRef.current++;
     const time = frame * 0.05;
 
-    // ========== 第1层：魔法阵（最底层）==========
-    drawMagicCircle(ctx, centerX, centerY, time);
+    // ========== 第1层：深渊星空背景 ==========
+    drawStarfield(ctx, width, height, time);
     
-    // ========== 第2层：雾气 ==========
-    drawMist(ctx, canvas.width, canvas.height, time);
+    // ========== 第2层：流星 ==========
+    drawMeteors(ctx, width, height, time);
+    
+    // ========== 第3层：迷雾 ==========
+    drawMist(ctx, width, height);
 
-    // 根据状态计算宠物变换
+    if (images.size < 9) {
+      animationRef.current = requestAnimationFrame(draw);
+      return;
+    }
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // 宠物状态计算
     let bodyY = centerY;
     let bodyScale = 1;
     let bodyRotation = 0;
@@ -200,13 +300,13 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
         break;
     }
 
-    // ========== 第3层：宠物（最上层）==========
+    // ========== 第4层：宠物 ==========
     ctx.save();
     ctx.translate(centerX, bodyY);
     ctx.rotate(bodyRotation);
     ctx.scale(bodyScale, bodyScale);
 
-    // 发光效果
+    // 发光
     const glow = images.get('glow');
     if (glow && state === 'sleep') {
       ctx.globalAlpha = glowAlpha;
@@ -226,14 +326,9 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
       if (!img) return;
       ctx.save();
       ctx.translate(offsetX, offsetY);
-      
       let rotation = Math.sin(time + phase) * 0.15;
-      if (state === 'happy') {
-        rotation = Math.sin(time * 3 + phase) * 0.4;
-      } else if (state === 'sleep') {
-        rotation = Math.sin(time * 0.5 + phase) * 0.05;
-      }
-      
+      if (state === 'happy') rotation = Math.sin(time * 3 + phase) * 0.4;
+      else if (state === 'sleep') rotation = Math.sin(time * 0.5 + phase) * 0.05;
       ctx.rotate(rotation);
       ctx.drawImage(img, -img.width / 2, 0);
       ctx.restore();
@@ -241,42 +336,32 @@ export function CanvasPet({ state, onClick }: CanvasPetProps) {
 
     // 主体
     const body = images.get('body');
-    if (body) {
-      ctx.drawImage(body, -body.width / 2, -body.height / 2);
-    }
+    if (body) ctx.drawImage(body, -body.width / 2, -body.height / 2);
 
-    // 眼睛（跟随鼠标）
+    // 眼睛
     const eye = images.get('eye');
     if (eye && state !== 'sleep') {
       const dx = mouseRef.current.x - centerX;
       const dy = mouseRef.current.y - bodyY;
       const angle = Math.atan2(dy, dx);
       const distance = Math.min(5, Math.sqrt(dx * dx + dy * dy) / 20);
-      
-      const pupilX = Math.cos(angle) * distance;
-      const pupilY = Math.sin(angle) * distance;
-      
-      ctx.drawImage(eye, -eye.width / 2 + pupilX, -10 - eye.height / 2 + pupilY);
+      ctx.drawImage(eye, -eye.width / 2 + Math.cos(angle) * distance, -10 - eye.height / 2 + Math.sin(angle) * distance);
     }
 
     // 嘴巴
     const mouth = showOpenMouth ? images.get('mouthOpen') : images.get('mouthClosed');
-    if (mouth) {
-      ctx.drawImage(mouth, -mouth.width / 2, 20);
-    }
+    if (mouth) ctx.drawImage(mouth, -mouth.width / 2, 20);
 
     ctx.restore();
 
     animationRef.current = requestAnimationFrame(draw);
-  }, [state]);
+  }, [state, initBackground]);
 
-  // 启动动画循环
+  // 启动动画
   useEffect(() => {
     animationRef.current = requestAnimationFrame(draw);
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [draw]);
 
